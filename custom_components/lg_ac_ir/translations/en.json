@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "LG AC Infrared",
+        "description": "Choose the infrared emitter that transmits to your LG air conditioner. This is typically an ESPHome device running the `ir_rf_proxy` component.",
+        "data": {
+          "infrared_entity_id": "Infrared emitter",
+          "name": "Name"
+        }
+      }
+    },
+    "abort": {
+      "no_emitters": "No infrared emitter entities were found. Set up an infrared emitter first (for example, an ESPHome device with the `ir_rf_proxy` component), then add this integration.",
+      "already_configured": "This infrared emitter already has an LG AC configured."
+    }
+  }
+}
