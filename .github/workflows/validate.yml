@@ -16,9 +16,6 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
-          # This is a custom integration not (yet) registered in the
-          # home-assistant/brands repository, so skip the brands asset check.
-          ignore: brands
 
   hassfest:
     name: Hassfest
