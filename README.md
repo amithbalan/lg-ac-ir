@@ -42,9 +42,14 @@ climate command  ─▶  LgAcCommand(mode, temperature, fan)   # infrared_protoc
                  ─▶  ESPHome ir_rf_proxy emitter  ─▶  IR LED  ─▶  your LG AC
 ```
 
-## Credits
+## Credits & third-party code
 
-- IR protocol encoding: [home-assistant-libs/infrared-protocols](https://github.com/home-assistant-libs/infrared-protocols)
+- IR protocol encoding: [home-assistant-libs/infrared-protocols](https://github.com/home-assistant-libs/infrared-protocols).
+  The LG AC encoder (`custom_components/lg_ac_ir/_lg_ac.py`) is **vendored** from that
+  project (MIT License, © Home Assistant Team) so the integration also works on Home
+  Assistant versions whose bundled `infrared-protocols` predates the LG AC encoder
+  (e.g. HA 2026.7.x ships 6.3.0). Only the `Command` import was repointed; encoder logic is
+  unchanged. It still uses the platform's `Command` base class and `async_send_command` API.
 - Built on the Home Assistant `infrared` platform.
 
 ## License

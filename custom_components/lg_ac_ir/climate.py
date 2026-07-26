@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from infrared_protocols.commands.lg_ac import (
+from ._lg_ac import (
     LgAcCommand,
     LgAcFanSpeed,
     LgAcMode,
