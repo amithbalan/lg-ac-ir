@@ -28,11 +28,13 @@ Home Assistant 2026.4 introduced the `infrared` platform: emitter integrations (
 | HVAC modes | off, cool, heat, dry, fan_only |
 | Target temperature | 16–30 °C (cool/heat) |
 | Fan speed | quiet, low, medium, high, auto |
+| Vertical swing | off / vertical |
+| Jet Cool | `boost` preset |
 | Power on/off | ✅ |
 
 **Notes**
 - IR is one-way, so the entity is **assumed-state** — Home Assistant tracks the last commanded state; it cannot read the AC back. If you change the AC with its handheld remote, HA won't know.
-- **Swing** is not exposed by the current `infrared-protocols` LG AC encoder, so it's omitted here. It can be added when upstream supports it.
+- **Swing** and **Jet Cool** are *toggle* buttons on the LG remote — each is a single fixed IR frame (not part of the cool/heat state frame). HA fires the toggle only when its assumed state changes, so if the AC and HA ever disagree, set the control back and forth once to resync.
 
 ## How it works
 

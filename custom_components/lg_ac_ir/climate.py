@@ -10,11 +10,22 @@ from ._lg_ac import (
     LgAcFanSpeed,
     LgAcMode,
 )
+from ._lg_ac_extra import (
+    JET_COOL_FRAME,
+    SWING_VERTICAL_FRAME,
+    LgAcFixedCommand,
+)
 
 from homeassistant.components.climate import (
     ClimateEntity,
     ClimateEntityFeature,
     HVACMode,
+)
+from homeassistant.components.climate.const import (
+    PRESET_BOOST,
+    PRESET_NONE,
+    SWING_OFF,
+    SWING_VERTICAL,
 )
 from homeassistant.components.infrared import async_send_command
 from homeassistant.config_entries import ConfigEntry
@@ -55,6 +66,12 @@ FAN_MODES = list(FAN_TO_LG)
 # Modes for which the LG protocol carries a target temperature.
 TEMPERATURE_MODES = (LgAcMode.COOL, LgAcMode.HEAT)
 
+# Swing and Jet Cool are stateless toggle codes on the LG remote, so state is
+# assumed: HA tracks the last commanded value and only fires the toggle frame
+# when the value actually changes.
+SWING_MODES = [SWING_OFF, SWING_VERTICAL]
+PRESET_MODES = [PRESET_NONE, PRESET_BOOST]
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -89,9 +106,13 @@ class LgAcIrClimate(ClimateEntity):
         HVACMode.FAN_ONLY,
     ]
     _attr_fan_modes = FAN_MODES
+    _attr_swing_modes = SWING_MODES
+    _attr_preset_modes = PRESET_MODES
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.FAN_MODE
+        | ClimateEntityFeature.SWING_MODE
+        | ClimateEntityFeature.PRESET_MODE
         | ClimateEntityFeature.TURN_ON
         | ClimateEntityFeature.TURN_OFF
     )
@@ -110,6 +131,8 @@ class LgAcIrClimate(ClimateEntity):
         self._attr_hvac_mode = HVACMode.OFF
         self._attr_target_temperature = 24
         self._attr_fan_mode = "auto"
+        self._attr_swing_mode = SWING_OFF
+        self._attr_preset_mode = PRESET_NONE
         # Mode to restore when turned on via the power toggle.
         self._last_on_mode = HVACMode.COOL
 
@@ -134,6 +157,28 @@ class LgAcIrClimate(ClimateEntity):
         """Set a new fan mode and transmit."""
         self._attr_fan_mode = fan_mode
         await self._transmit()
+
+    async def async_set_swing_mode(self, swing_mode: str) -> None:
+        """Toggle vertical swing.
+
+        LG sends a single fixed toggle frame; only fire it when the assumed
+        state actually flips, so a no-op set doesn't desync the vane.
+        """
+        if swing_mode == self._attr_swing_mode:
+            return
+        self._attr_swing_mode = swing_mode
+        await self._send_fixed(SWING_VERTICAL_FRAME)
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Toggle Jet Cool (the LG 'boost' preset).
+
+        Like swing, Jet Cool is a single toggle frame; fire it only on an actual
+        change of the assumed preset state.
+        """
+        if preset_mode == self._attr_preset_mode:
+            return
+        self._attr_preset_mode = preset_mode
+        await self._send_fixed(JET_COOL_FRAME)
 
     async def async_turn_on(self) -> None:
         """Turn the AC on, restoring the last active mode."""
@@ -163,4 +208,11 @@ class LgAcIrClimate(ClimateEntity):
             )
 
         await async_send_command(self.hass, self._emitter_id, command)
+        self.async_write_ha_state()
+
+    async def _send_fixed(self, frame: int) -> None:
+        """Transmit a stateless LG toggle frame (Jet Cool / swing) and update state."""
+        await async_send_command(
+            self.hass, self._emitter_id, LgAcFixedCommand(frame=frame)
+        )
         self.async_write_ha_state()
